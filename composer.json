@@ -1,0 +1,14 @@
+{
+  "autoload": {
+    "psr-4": {
+      "Yampsdk\\": "src/"
+    }
+  },
+  "require": {
+    "phpunit/phpunit": "^6.3",
+    "guzzlehttp/guzzle": "^6.3"
+  },
+  "scripts": {
+    "test": "phpunit --debug --bootstrap=vendor/autoload.php tests"
+  }
+}
