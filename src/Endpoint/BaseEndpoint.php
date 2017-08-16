@@ -67,7 +67,7 @@ class BaseEndpoint implements \JsonSerializable
             $propertyName = $this->camelCaseToSnakeCase($name);
             if ($this->isObject($name)) {
                 $result[$propertyName] = json_encode($this->{$name}, JSON_PRETTY_PRINT);
-            } else {
+            } elseif (isset($this->{$name})) {
                 $result[$propertyName] = $value;
             }
         }

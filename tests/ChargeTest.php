@@ -86,4 +86,15 @@ class ChargeTest extends TestCase
         echo $encodedCharge;
         $this->assertJson($encodedCharge);
     }
+
+    public function testCreateMinimalCustomer()
+    {
+        $customer = new Customer();
+        $customer->setName('customerValue');
+
+        $encodedCustomer = json_encode($customer);
+
+        echo $encodedCustomer;
+        $this->assertJson($encodedCustomer);
+    }
 }

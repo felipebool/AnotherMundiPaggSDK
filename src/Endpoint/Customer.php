@@ -26,4 +26,24 @@ class Customer extends BaseEndpoint
     protected $updatedAt;
     protected $birthdate;
     protected $metadata;
+
+    public function create(): string
+    {
+
+    }
+
+    public function get(): string
+    {
+
+    }
+
+    public function edit(): string
+    {
+
+    }
+
+    public function list(): string
+    {
+
+    }
 }
