@@ -2,18 +2,31 @@
 
 namespace Yampsdk\Endpoint;
 
+use Yampsdk\Config;
+use GuzzleHttp\Client as GuzzleClient;
+
 class BaseEndpoint implements \JsonSerializable
 {
+    protected $data;
+    protected $config;
+
+    public function __construct(Config $config)
+    {
+        $this->data = array();
+        $this->config = $config;
+    }
+
     public function __call(string $name, array $arguments)
     {
-        $method = substr($name, 0, 3);
+        $action = substr($name, 0, 3);
+        $property = substr($name, 3);
+        $value = $arguments[0];
 
-        switch ($method) {
+        switch ($action) {
             case 'get':
-                return $this->getter(lcfirst(substr($name, 3)));
+                return $this->getter(lcfirst($property));
             case 'set':
-                $this->setter(lcfirst(substr($name, 3)), $arguments);
-                break;
+                return $this->setter($property, $value);
             default:
                 throw new \Exception('Error: Unknown method' . $name);
         }
@@ -21,21 +34,13 @@ class BaseEndpoint implements \JsonSerializable
 
     private function getter(string $name): string
     {
-        if (property_exists($this, $name)) {
-            return $this->{$name};
-        }
-
-        throw new \Exception('Error: Unknown property ' . $name);
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
-    private function setter(string $name, array $arguments): void
+    private function setter(string $name, $arguments)
     {
-        if (property_exists($this, $name)) {
-            $this->{$name} = $arguments[0];
-            return;
-        }
-
-        throw new \Exception('Error: Unknown property ' . $name);
+        $this->data[lcfirst($name)] = $arguments;
+        return $this;
     }
 
     protected function camelCaseToSnakeCase(string $name): string
@@ -55,23 +60,41 @@ class BaseEndpoint implements \JsonSerializable
 
     protected function isObject(string $className): bool
     {
-        return class_exists('\\Yampsdk\\Endpoint\\' . ucwords($className));
+        return class_exists($this->config->getEndpoint() . ucwords($className));
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $result = array();
-        $properties = get_object_vars($this);
 
-        foreach ($properties as $name => $value) {
-            $propertyName = $this->camelCaseToSnakeCase($name);
-            if ($this->isObject($name)) {
-                $result[$propertyName] = json_encode($this->{$name}, JSON_PRETTY_PRINT);
-            } elseif (isset($this->{$name})) {
+        foreach ($this->data as $key => $value) {
+            $propertyName = $this->camelCaseToSnakeCase($key);
+
+            if ($this->isObject($key)) {
+                $result[$propertyName] = json_encode($this->data[$key], JSON_PRETTY_PRINT);
+            } elseif (isset($this->data[$key])) {
                 $result[$propertyName] = $value;
             }
         }
 
         return $result;
+    }
+
+    protected function postRequest(string $endpoint, array $body)
+    {
+        $client = new GuzzleClient();
+        $response = $client->request(
+            'POST',
+            $this->config->getApiUrl() . $endpoint,
+            [
+                'auth' => [
+                    $this->config->getSecretKey(),
+                    $this->config->getPassword()
+                ],
+                'json' => $body
+            ]
+        );
+
+        return $response;
     }
 }
